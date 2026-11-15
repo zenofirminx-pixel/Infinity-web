@@ -1,18 +1,23 @@
-# Infinity AI — React + Vite
+# Infinity — React + Vite
 
 ## Installation
-
 ```bash
 npm install
 npm run dev
 ```
 
-Build de production : `npm run build` ; aperçu : `npm run preview`.
+## Production
+```bash
+npm run build
+npm run preview
+```
 
-## Migration sans perte de logique
+## Architecture de migration
+- `src/main.jsx` : point d'entrée React.
+- `src/shell.css` : shell responsive.
+- `public/legacy.html` et `public/script.js` : client Infinity existant conservé pour ne perdre aucune fonctionnalité pendant la migration (authentification, conversations, historique, réglages, API en streaming, feedback et PWA).
+- `public/style.css` : styles existants avec le nouvel indicateur d'attente.
 
-L'interface est désormais démarrée par React (`src/main.jsx`, `src/App.jsx`) et servie par Vite. Pour éviter de casser les fonctionnalités existantes, le DOM historique, ses identifiants et son moteur événementiel (`public/legacy.js`) sont conservés et montés dans le composant React. Le nouveau thème bleu néon est une couche CSS séparée (`src/neon.css`). Les conversations restent dans les mêmes clés `localStorage` (`infinity_*`), et les appels backend/authentification restent dans le code d'origine.
+Le client historique est chargé dans une iframe same-origin depuis React. Cela permet une migration progressive sans réécrire à l'aveugle les nombreux gestionnaires DOM et intégrations backend. Les prochaines étapes peuvent convertir chaque écran en composants React sans changer les API ni le stockage.
 
-**Important :** le ZIP source fourni ne contenait pas `config.js`. Le moteur historique prévoit déjà une configuration de secours. Si votre déploiement utilisait un `config.js` privé/non inclus dans l'archive, ajoutez-le dans `public/` et chargez-le avant `legacy.js`.
-
-Le service worker original est conservé dans `public/SW.js`.
+L'ancienne icône animée/statique `icon-static.png` a été retirée. Pendant l'attente de la réponse serveur, Infinity affiche un unique point blanc qui grossit puis rétrécit en boucle. Il disparaît dès que la réponse commence à arriver.
