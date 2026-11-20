@@ -1,23 +1,7 @@
-# Infinity — React + Vite
+# Pal Web
 
-## Installation
-```bash
-npm install
-npm run dev
-```
+Application React/Vite. Configurer `VITE_API_URL` avec l'origine du backend Pal.
 
-## Production
-```bash
-npm run build
-npm run preview
-```
+Le frontend ne sauvegarde pas les données métier dans `localStorage` ou `sessionStorage`. L'authentification, la session invitée, les conversations, la recherche, les paramètres, les fichiers et les ressources de l'espace de travail sont gérés par les API du serveur.
 
-## Architecture de migration
-- `src/main.jsx` : point d'entrée React.
-- `src/shell.css` : shell responsive.
-- `public/legacy.html` et `public/script.js` : client Infinity existant conservé pour ne perdre aucune fonctionnalité pendant la migration (authentification, conversations, historique, réglages, API en streaming, feedback et PWA).
-- `public/style.css` : styles existants avec le nouvel indicateur d'attente.
-
-Le client historique est chargé dans une iframe same-origin depuis React. Cela permet une migration progressive sans réécrire à l'aveugle les nombreux gestionnaires DOM et intégrations backend. Les prochaines étapes peuvent convertir chaque écran en composants React sans changer les API ni le stockage.
-
-L'ancienne icône animée/statique `icon-static.png` a été retirée. Pendant l'attente de la réponse serveur, Infinity affiche un unique point blanc qui grossit puis rétrécit en boucle. Il disparaît dès que la réponse commence à arriver.
+Les anciennes ressources sont conservées dans `migration-reference/legacy/` comme référence de migration, mais elles ne sont pas chargées par l'application active.
