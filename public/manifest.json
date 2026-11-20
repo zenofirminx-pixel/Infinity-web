@@ -1,12 +1,12 @@
 {
-  "name": "Infinity",
-  "short_name": "Infinity",
+  "name": "Pal",
+  "short_name": "Pal",
   "start_url": "/",
   "scope": "/",
-  "display": "standalone", 
-  "background_color": "#000", 
-  "theme_color": "#000", 
-  "orientation": "portrait", 
+  "display": "standalone",
+  "background_color": "#f8f9fc",
+  "theme_color": "#e98abf",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -18,5 +18,6 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "description": "Votre espace intelligent."
 }
