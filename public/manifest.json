@@ -4,8 +4,8 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f8f9fc",
-  "theme_color": "#e98abf",
+  "background_color": "#000",
+  "theme_color": "#000",
   "orientation": "portrait",
   "icons": [
     {
@@ -19,5 +19,5 @@
       "type": "image/png"
     }
   ],
-  "description": "Votre espace intelligent."
+  "description": "Votre espace intelligent"
 }

@@ -1,19 +1,23 @@
-# Pal Web
+# Infinity — React + Vite
 
-Application React/Vite organisée par pages, composants et services API.
-
-```text
-Pal-web/
-├── src/
-│   ├── app/                 # emplacement pour le routeur et les providers
-│   ├── components/          # composants réutilisables
-│   ├── pages/               # WelcomePage et ChatPage
-│   ├── services/            # client API et streaming
-│   ├── styles/              # styles globaux Pal
-│   ├── App.jsx              # orchestration de session et d'espace
-│   └── main.jsx             # point d'entrée React
-├── public/                  # PWA, icônes et service worker
-└── migration-reference/     # ancienne interface conservée hors du runtime
+## Installation
+```bash
+npm install
+npm run dev
 ```
 
-Configurer `VITE_API_URL` avec l'origine du backend Pal. À défaut, l'application utilise l'URL historique du backend.
+## Production
+```bash
+npm run build
+npm run preview
+```
+
+## Architecture de migration
+- `src/main.jsx` : point d'entrée React.
+- `src/shell.css` : shell responsive.
+- `public/legacy.html` et `public/script.js` : client Infinity existant conservé pour ne perdre aucune fonctionnalité pendant la migration (authentification, conversations, historique, réglages, API en streaming, feedback et PWA).
+- `public/style.css` : styles existants avec le nouvel indicateur d'attente.
+
+Le client historique est chargé dans une iframe same-origin depuis React. Cela permet une migration progressive sans réécrire à l'aveugle les nombreux gestionnaires DOM et intégrations backend. Les prochaines étapes peuvent convertir chaque écran en composants React sans changer les API ni le stockage.
+
+L'ancienne icône animée/statique `icon-static.png` a été retirée. Pendant l'attente de la réponse serveur, Infinity affiche un unique point blanc qui grossit puis rétrécit en boucle. Il disparaît dès que la réponse commence à arriver.

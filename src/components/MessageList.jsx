@@ -1,3 +1,0 @@
-export default function MessageList({ messages, busy, status }) {
-  return <div className="message-list">{messages.length === 0 ? <div className="chat-welcome"><span className="welcome-orb">✦</span><h1>Bienvenue chez Pal</h1><p>Par quoi voulez-vous commencer ?</p><div className="suggestions"><span>Explique-moi un sujet</span><span>Aide-moi à organiser une idée</span><span>Écris quelque chose avec moi</span></div></div> : messages.map((message, index) => <article className={`message-row ${message.role}`} key={`${message.id || index}`}><div className="message-content">{message.text}</div></article>)}{busy && <div className="assistant-status">{status || 'Pal réfléchit…'}</div>}</div>;
-}
