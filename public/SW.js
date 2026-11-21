@@ -1,10 +1,10 @@
-const CACHE_NAME = 'aurx-ai-v1';
+const CACHE_NAME = 'infinity-react-vite-v2';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
   '/style.css',
   '/script.js',
-  '/config.js',
+  '/legacy.html',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png'
