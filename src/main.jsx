@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './shell.css';
 
-const TRIAL_LIMIT = 10;
+const TRIAL_LIMIT = 5;
 const TRIAL_COUNT_KEY = 'infinity_site_trial_count_v1';
 const TRIAL_STARTED_KEY = 'infinity_site_trial_started_v1';
 const TRIAL_LOCK_KEY = 'infinity_site_trial_locked_v1';
@@ -30,11 +30,11 @@ function SiteBlockScreen({ locked, count, onStart }) {
         <button className="trial-button trial-button-disabled" type="button" disabled aria-disabled="true">
           Essai terminé
         </button>
-        <p className="block-footnote">La limite de 10 messages a été atteinte. Le bouton d’essai est désactivé.</p>
+        <p className="block-footnote">La limite de 5 messages a été atteinte. Le bouton d’essai est désactivé.</p>
       </> : <>
         <div className="trial-info">
           <strong>Un essai est disponible</strong>
-          <span>Tu peux envoyer jusqu’à 10 messages pour tester le chat.</span>
+          <span>Tu peux envoyer jusqu’à 5 messages pour tester le chat.</span>
         </div>
         <button className="trial-button" type="button" onClick={onStart}>
           Lancer un essai <span aria-hidden="true">→</span>
