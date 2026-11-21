@@ -1,87 +1,208 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './shell.css';
 
-const BACKEND_URL = 'https://aur-x-backend.vercel.app';
+const TRIAL_LIMIT = 10;
+const TRIAL_COUNT_KEY = 'infinity_site_trial_count_v1';
+const TRIAL_STARTED_KEY = 'infinity_site_trial_started_v1';
+const TRIAL_LOCK_KEY = 'infinity_site_trial_locked_v1';
 
-function PalMark() {
-  return <div className="pal-mark" aria-label="Pal">
-    <span>Pal</span><i aria-hidden="true" />
-  </div>;
+
+function readTrialCount() {
+  const value = Number.parseInt(localStorage.getItem(TRIAL_COUNT_KEY) || '0', 10);
+  return Number.isFinite(value) ? Math.max(0, Math.min(TRIAL_LIMIT, value)) : 0;
 }
 
-function WelcomeScreen({ onContinue }) {
-  const [mode, setMode] = useState('welcome');
-  const [notice, setNotice] = useState('');
-  const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    let active = true;
-    fetch(`${BACKEND_URL}/api/auth/me`, { credentials: 'include' })
-      .then((response) => response.ok ? response.json() : null)
-      .then((data) => { if (active && data) setUser(data); })
-      .catch(() => {});
-    return () => { active = false; };
-  }, []);
-
-  const googleLogin = () => {
-    window.location.href = `${BACKEND_URL}/api/auth/google`;
-  };
-
-  const submitEmail = (event) => {
-    event.preventDefault();
-    setNotice("La connexion par e-mail sera activée lors du raccordement de l'authentification côté serveur.");
-  };
-
-  return <section className="pal-welcome" aria-label="Accueil Pal">
-    <div className="smoke smoke-pink" /><div className="smoke smoke-blue" /><div className="smoke smoke-white" />
-    <div className="welcome-card">
-      <PalMark />
-      <p className="welcome-eyebrow">Votre espace intelligent</p>
-      <h1>{user ? 'Bon retour chez Pal' : 'Bienvenue chez Pal'}</h1>
-      <p className="welcome-copy">Un espace pour réfléchir, créer et avancer.</p>
-
-      {mode === 'welcome' && <>
-        <button className="auth-button google-button" onClick={googleLogin} type="button">
-          <span className="google-g" aria-hidden="true">G</span> Continuer avec Google
+function SiteBlockScreen({ locked, count, onStart }) {
+  return <section className="site-block-screen" aria-label="Accès temporairement bloqué">
+    <div className="block-glow block-glow-a" />
+    <div className="block-glow block-glow-b" />
+    <div className="block-card">
+      <div className="block-symbol" aria-hidden="true">∞</div>
+      <span className="block-label">INFINITY · ACCÈS LIMITÉ</span>
+      <h1>Site temporairement bloqué</h1>
+      <p className="block-explanation">
+        Le créateur du site a donc décidé de bloquer ce site car ce site n’est pas encore en production et est en cours de création.
+      </p>
+      {locked ? <>
+        <div className="block-status"><span className="status-dot" /> Essai terminé · Accès bloqué</div>
+        <button className="trial-button trial-button-disabled" type="button" disabled aria-disabled="true">
+          Essai terminé
         </button>
-        <button className="auth-button primary-button" onClick={() => setMode('email')} type="button">Continuer avec e-mail</button>
-        <button className="text-button" onClick={() => setMode('register')} type="button">Créer un compte</button>
+        <p className="block-footnote">La limite de 10 messages a été atteinte. Le bouton d’essai est désactivé.</p>
+      </> : <>
+        <div className="trial-info">
+          <strong>Un essai est disponible</strong>
+          <span>Tu peux envoyer jusqu’à 10 messages pour tester le chat.</span>
+        </div>
+        <button className="trial-button" type="button" onClick={onStart}>
+          Lancer un essai <span aria-hidden="true">→</span>
+        </button>
+        {count > 0 && <p className="block-footnote">Essai en cours : {count}/{TRIAL_LIMIT} messages utilisés.</p>}
       </>}
-
-      {mode === 'email' && <form className="email-form" onSubmit={submitEmail}>
-        <label htmlFor="pal-email">Adresse e-mail</label>
-        <input id="pal-email" type="email" autoComplete="email" placeholder="vous@exemple.com" required />
-        <label htmlFor="pal-password">Mot de passe</label>
-        <input id="pal-password" type="password" autoComplete="current-password" placeholder="Votre mot de passe" required />
-        <button className="auth-button primary-button" type="submit">Se connecter</button>
-        <button className="text-button" type="button" onClick={() => setMode('welcome')}>Retour</button>
-      </form>}
-
-      {mode === 'register' && <form className="email-form" onSubmit={submitEmail}>
-        <label htmlFor="pal-register-email">Adresse e-mail</label>
-        <input id="pal-register-email" type="email" autoComplete="email" placeholder="vous@exemple.com" required />
-        <label htmlFor="pal-register-password">Créer un mot de passe</label>
-        <input id="pal-register-password" type="password" autoComplete="new-password" minLength="8" placeholder="8 caractères minimum" required />
-        <button className="auth-button primary-button" type="submit">Créer mon compte</button>
-        <button className="text-button" type="button" onClick={() => setMode('welcome')}>Retour</button>
-      </form>}
-
-      {notice && <p className="auth-notice" role="status">{notice}</p>}
-      <div className="welcome-divider"><span>ou</span></div>
-      <button className="guest-button" type="button" onClick={onContinue}>Continuer sans compte</button>
-      <p className="welcome-footnote">En continuant, vous pourrez découvrir Pal en mode invité.</p>
+      <div className="block-footer">Site en développement · Merci de votre compréhension</div>
     </div>
   </section>;
 }
 
+
 function App() {
-  const [showWelcome, setShowWelcome] = useState(true);
+  const iframeRef = useRef(null);
+  const activeTrialRef = useRef(false);
+  const countRef = useRef(0);
+  const lockRef = useRef(false);
+  const [trialStarted, setTrialStarted] = useState(localStorage.getItem(TRIAL_STARTED_KEY) === 'true');
+  const [trialCount, setTrialCount] = useState(readTrialCount());
+  const [locked, setLocked] = useState(localStorage.getItem(TRIAL_LOCK_KEY) === 'true' || readTrialCount() >= TRIAL_LIMIT);
+
+  countRef.current = trialCount;
+  lockRef.current = locked;
+  activeTrialRef.current = trialStarted && !locked;
+
+  const lockTrial = useCallback(() => {
+    localStorage.setItem(TRIAL_COUNT_KEY, String(TRIAL_LIMIT));
+    localStorage.setItem(TRIAL_LOCK_KEY, 'true');
+    setTrialCount(TRIAL_LIMIT);
+    setLocked(true);
+    setTrialStarted(false);
+    activeTrialRef.current = false;
+    lockRef.current = true;
+  }, []);
+
+  const startTrial = useCallback(() => {
+    if (lockRef.current) return;
+    localStorage.setItem(TRIAL_STARTED_KEY, 'true');
+    setTrialStarted(true);
+    activeTrialRef.current = true;
+    const frame = iframeRef.current;
+    try {
+      const frameDoc = frame?.contentDocument;
+      if (frameDoc) {
+        frameDoc.defaultView.localStorage.setItem('infinity_terms', 'true');
+        frameDoc.getElementById('termsScreen')?.classList.add('hidden');
+        frameDoc.getElementById('welcome')?.classList.add('hidden');
+      }
+    } catch (error) {
+      console.warn('Unable to dismiss legacy onboarding screen:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const frame = iframeRef.current;
+    if (!frame) return;
+    let observer;
+    let pollTimer;
+    let completionTimer;
+    let disposed = false;
+    let tenthMessageSent = false;
+
+    const installTrialLimiter = () => {
+      const frameDoc = frame.contentDocument;
+      if (!frameDoc || disposed || lockRef.current) return;
+      const input = frameDoc.getElementById('input');
+      const sendButton = frameDoc.getElementById('sendBtn');
+      const chat = frameDoc.getElementById('chat');
+      if (!input || !sendButton || !chat) return;
+
+      const saveCount = (next) => {
+        const bounded = Math.max(0, Math.min(TRIAL_LIMIT, next));
+        localStorage.setItem(TRIAL_COUNT_KEY, String(bounded));
+        countRef.current = bounded;
+        setTrialCount(bounded);
+        return bounded;
+      };
+
+      const countSend = (event) => {
+        if (!activeTrialRef.current || lockRef.current || countRef.current >= TRIAL_LIMIT) {
+          if (countRef.current >= TRIAL_LIMIT) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation?.();
+          }
+          return;
+        }
+        if (!input.value.trim()) return;
+        const next = saveCount(countRef.current + 1);
+        if (next === TRIAL_LIMIT) {
+          tenthMessageSent = true;
+          // Let the tenth request complete; then return to the permanent block screen.
+          let sawLoading = false;
+          const waitForCompletion = () => {
+            if (disposed || lockRef.current) return;
+            const loading = sendButton.classList.contains('loading');
+            sawLoading = sawLoading || loading;
+            if (sawLoading && !loading) {
+              lockTrial();
+              return;
+            }
+            if (!sawLoading && Date.now() - completionStart > 60000) {
+              lockTrial();
+              return;
+            }
+            completionTimer = setTimeout(waitForCompletion, 120);
+          };
+          const completionStart = Date.now();
+          completionTimer = setTimeout(waitForCompletion, 120);
+        }
+      };
+
+      const onClickCapture = (event) => {
+        if (event.target.closest('#sendBtn')) countSend(event);
+      };
+      const onKeyCapture = (event) => {
+        if (event.target === input && event.key === 'Enter' && !event.shiftKey) countSend(event);
+      };
+      frameDoc.addEventListener('click', onClickCapture, true);
+      frameDoc.addEventListener('keydown', onKeyCapture, true);
+
+      observer = new MutationObserver(() => {
+        // Locking is based on send attempts, not restored conversation history.
+        if (tenthMessageSent && sendButton && !sendButton.classList.contains('loading') && countRef.current >= TRIAL_LIMIT) {
+          lockTrial();
+        }
+      });
+      observer.observe(sendButton, { attributes: true, attributeFilter: ['class'] });
+
+      frame.__infinityTrialCleanup = () => {
+        frameDoc.removeEventListener('click', onClickCapture, true);
+        frameDoc.removeEventListener('keydown', onKeyCapture, true);
+      };
+    };
+
+
+    const onFrameLoad = () => {
+      installTrialLimiter();
+      if (trialStarted && !locked) {
+        try {
+          const doc = frame.contentDocument;
+          doc?.defaultView?.localStorage.setItem('infinity_terms', 'true');
+          doc?.getElementById('termsScreen')?.classList.add('hidden');
+        } catch (error) {
+          console.warn('Unable to initialize trial iframe:', error);
+        }
+      }
+    };
+
+    frame.addEventListener('load', onFrameLoad);
+    if (frame.contentDocument?.readyState === 'complete') onFrameLoad();
+
+    return () => {
+      disposed = true;
+      frame.removeEventListener('load', onFrameLoad);
+      frame.__infinityTrialCleanup?.();
+      observer?.disconnect();
+      clearTimeout(pollTimer);
+      clearTimeout(completionTimer);
+    };
+  }, [trialStarted, locked, lockTrial]);
+
   return <main className="app-shell">
-    <iframe className="pal-app" src="/legacy.html" title="Application Pal" allow="clipboard-read; clipboard-write" />
-    {showWelcome && <WelcomeScreen onContinue={() => setShowWelcome(false)} />}
+    <iframe ref={iframeRef} className="pal-app" src="/legacy.html" title="Infinity Chat" allow="clipboard-read; clipboard-write" />
+    {!trialStarted || locked ? <SiteBlockScreen locked={locked} count={trialCount} onStart={startTrial} /> : null}
   </main>;
 }
+
 
 createRoot(document.getElementById('root')).render(<React.StrictMode><App /></React.StrictMode>);
 
